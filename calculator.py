@@ -18,7 +18,11 @@ def Calculate(e):
         CopyToClipBoard(0)
         return
 
-    if e.keysym not in ["BackSpace", "Left", "Right", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] and e.keysym not in OPERATIONS:
+    if e.keysym == "Escape":
+        Reset()
+        return
+
+    if e.keysym not in ["BackSpace", "Left", "Right", "Return", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] and e.keysym not in OPERATIONS:
         return
 
     if e.keysym == "Left":
@@ -30,6 +34,9 @@ def Calculate(e):
     
     elif e.keysym == "BackSpace":
         equation = equation[:len(equation) - cursorIndex - 1] + equation[len(equation) - cursorIndex:]
+
+    elif e.keysym == "Return":
+        equation = label.cget("text")
 
     elif e.keysym in OPERATIONS:
         equation = equation[:len(equation) - cursorIndex] + OPERATIONS_SYMBOLS[OPERATIONS.index(e.keysym)] + equation[len(equation) - cursorIndex:]
@@ -49,32 +56,37 @@ def SetText(lbl:CTkLabel, t:str):
     lbl.update_idletasks()
 
 def SetRootPos(root:CTk, width:int):
-    screenWidth = root.winfo_screenwidth() # width of the screen
+    screenWidth = root.winfo_screenwidth()
     x = (screenWidth / 2) - (width / 2)
     Resize(root, width)
 
+def Reset():
+    equation = ""
+    SetText(entryL, "")
+    SetText(entryR, "")
+    SetText(label, "")
+    SetRootPos(root, 300)
+
 def CopyToClipBoard(e):
-    root.clipboard_clear()  # Pulisce gli appunti
-    root.clipboard_append(str(label.cget("text")))  # Aggiunge il testo della Label
-    root.update()  # Aggiorna gli appunti
+    root.clipboard_clear()
+    root.clipboard_append(str(label.cget("text")))
+    root.update()
     system(f"notify-send '{label.cget("text")}' 'Testo copiato negli appunti\nNon chiudere la calcolatrice prima di incollare'")
 
 def Resize(root, target_width, step=2, interval=2):
     current_width = root.winfo_width()
     if abs(current_width - target_width) <= step:
-        # Fine animazione: imposta la dimensione finale
         root.geometry(f"{target_width}x80")
         return
 
-    # Calcola la nuova larghezza in base alla direzione del cambiamento
     new_width = current_width + step if current_width < target_width else current_width - step
     screen_width = root.winfo_screenwidth()
     x = int((screen_width / 2) - (new_width / 2))
 
-    # Applica la nuova dimensione
+    # Apply step
     root.geometry(f"{new_width}x80+{x}+800")
 
-    # Pianifica il prossimo passo dell'animazione
+    # Plan next step
     root.after(interval, Resize, root, target_width, step, interval)
 
 # root
@@ -110,8 +122,10 @@ equals.grid(row=1, column=4, padx=0, pady=0)
 label = CTkLabel(mainFrame, text="", font=myFont, justify="left", fg_color="transparent", height=80)
 label.grid(row=1, column=5, padx=0, pady=0)
 
+# binds
 root.bind("<KeyPress>", Calculate)
 root.bind("<Button-1>", CopyToClipBoard)
 
+# showing
 mainFrame.pack(padx=0, pady=0)
 root.mainloop()
